@@ -1932,6 +1932,31 @@ struct compound_statement_node
 };
 
 
+struct unsafe_statement_node
+{
+	token const*				identifier = {};
+	std::unique_ptr<compound_statement_node> statements;
+	
+	auto position() const
+			-> source_position
+	{
+		assert (identifier);
+		return identifier->position();
+	}
+	
+	auto visit(auto& v, int depth)
+			-> void
+	{
+		v.start(*this, depth);
+		assert (identifier);
+		v.start(*identifier, depth+1);
+		assert (statements);
+		statements->visit(v, depth+1);
+		v.end(*this, depth);
+	}
+};
+
+
 struct selection_statement_node
 {
     bool                                        is_constexpr = false;
@@ -2213,7 +2238,7 @@ struct statement_node
     // type(s) used in a std::unique_ptr as a member
     ~statement_node();
 
-    enum active : u8 { expression=0, compound, selection, declaration, return_, iteration, using_, contract, inspect, jump };
+    enum active : u8 { expression=0, compound, selection, declaration, return_, iteration, using_, contract, inspect, jump, unsafe_ };
     std::variant<
         std::unique_ptr<expression_statement_node>,
         std::unique_ptr<compound_statement_node>,
@@ -2224,7 +2249,8 @@ struct statement_node
         std::unique_ptr<using_statement_node>,
         std::unique_ptr<contract_node>,
         std::unique_ptr<inspect_expression_node>,
-        std::unique_ptr<jump_statement_node>
+        std::unique_ptr<jump_statement_node>,
+				std::unique_ptr<unsafe_statement_node>
     > statement;
 
     bool emitted = false;               // a note field that's used during lowering to Cpp1
@@ -2243,6 +2269,7 @@ struct statement_node
     auto is_contract   () const -> bool { return statement.index() == contract;    }
     auto is_inspect    () const -> bool { return statement.index() == inspect;     }
     auto is_jump       () const -> bool { return statement.index() == jump;        }
+		auto is_unsafe     () const -> bool { return statement.index() == unsafe_; }
 
     template<typename Node>
     auto get_if()
@@ -2537,6 +2564,7 @@ auto statement_node::visit(auto& v, int depth)
     try_visit<contract   >(statement, v, depth);
     try_visit<inspect    >(statement, v, depth);
     try_visit<jump       >(statement, v, depth);
+		try_visit<unsafe_    >(statement, v, depth);
     v.end(*this, depth);
 }
 
@@ -2548,6 +2576,7 @@ struct function_type_node
     declaration_node* my_decl;
 
     std::unique_ptr<parameter_declaration_list_node> parameters;
+		bool is_safe = true;
     bool throws = false;
 
     struct single_type_id {
@@ -2605,6 +2634,9 @@ struct function_type_node
 
     auto is_function_with_this() const
         -> bool;
+	
+		auto is_safe_function() const
+				-> bool;
 
     auto is_virtual_function() const
         -> bool;
@@ -4279,6 +4311,13 @@ auto function_type_node::is_function_with_this() const
         return true;
     }
     return false;
+}
+
+
+auto function_type_node::is_safe_function() const
+		-> bool
+{
+	return is_safe;
 }
 
 
@@ -7643,6 +7682,36 @@ private:
 
         return n;
     }
+	
+	
+		//G unsafe-statement:
+		//G     unsafe compound_statement
+		//G
+		auto unsafe_statement()
+				-> std::unique_ptr<unsafe_statement_node>
+	{
+		if (
+				curr().type() != lexeme::Keyword
+				|| curr() != "unsafe"
+				)
+		{
+			return {};
+		}
+		
+		auto n = std::make_unique<unsafe_statement_node>();
+		n->identifier = &curr();
+		next();
+
+		if (auto s = compound_statement()) {
+				n->statements = std::move(s);
+		}
+		else {
+				error("invalid unsafe statement", true, {}, true);
+				return {};
+		}
+		
+		return n;
+	}
 
 
     //G return-statement:
@@ -8191,6 +8260,12 @@ private:
             assert (n->is_inspect());
             return n;
         }
+			
+				else if (auto s = unsafe_statement()) {
+					n->statement = std::move(s);
+					assert (n->is_unsafe());
+					return n;
+				}
 
         else if (auto s = return_statement()) {
             n->statement = std::move(s);
@@ -8762,6 +8837,16 @@ private:
             return {};
         }
         n->parameters = std::move(parameters);
+			
+				//	Optional "unsafe"
+				if (
+						curr().type() == lexeme::Keyword
+						&& curr() == "unsafe"
+						)
+				{
+					n->is_safe = false;
+					next();
+				}
 
         //  Optional "throws"
         if (

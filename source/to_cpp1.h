@@ -2204,6 +2204,16 @@ public:
             printer.print_cpp2("()", n.close_brace);
         }
     }
+	
+	
+		//-----------------------------------------------------------------------
+		//
+		auto emit(unsafe_statement_node const& n)
+				-> void
+		{   STACKINSTR
+				assert(n.statements);
+				emit(*n.statements);
+		}
 
 
     //-----------------------------------------------------------------------
@@ -4389,6 +4399,7 @@ public:
         try_emit<statement_node::contract   >(n.statement);
         try_emit<statement_node::inspect    >(n.statement, false);
         try_emit<statement_node::jump       >(n.statement);
+				try_emit<statement_node::unsafe_    >(n.statement);
 
         printer.preempt_position_pop();
 
