@@ -1150,9 +1150,9 @@ auto lex_line(
             "operator",
             "private", "protected", "public",
             "register", "reinterpret_cast", "requires", "return",
-            "short", "signed", "sizeof", "static_assert", "static_cast", "static", "switch",
+            "safe", "short", "signed", "sizeof", "static_assert", "static_cast", "static", "switch",
             "template", "this", "thread_local", "throws", "throw", "try", "typedef", "typeid", "typename",
-            "unsigned", "using",
+            "unsafe", "unsigned", "using",
             "virtual", "void", "volatile",
             "wchar_t", "while"
         };
