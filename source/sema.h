@@ -1504,6 +1504,22 @@ public:
                 );
                 return false;
             }
+					
+						if (decl->declaration->is_function())
+						{
+							auto& func = std::get<declaration_node::a_function>(decl->declaration->type);
+							if (
+									!func->is_safe_function()
+									&& n.inside_safe_context
+									)
+							{
+								errors.emplace_back(
+																		n.position(),
+																		"calling unsafe function from within a safe context"
+																		);
+								return false;
+							}
+						}
         }
 
         if (

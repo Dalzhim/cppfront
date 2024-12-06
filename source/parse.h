@@ -956,6 +956,7 @@ struct postfix_expression_node
     };
     std::vector<term> ops;
     capture_group* cap_grp = {};
+		bool inside_safe_context = true;
 
     ~postfix_expression_node();
 
@@ -6428,6 +6429,7 @@ private:
     {
         auto n = std::make_unique<postfix_expression_node>();
         n->expr = primary_expression();
+				n->inside_safe_context = current_declarations.back()->is_function() && std::get<declaration_node::a_function>(current_declarations.back()->type)->is_safe_function();
         if (!(n->expr)) {
             return {};
         }
