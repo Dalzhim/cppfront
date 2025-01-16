@@ -1,4 +1,4 @@
-# safe-cppfront
+# Safe Cppfront
 Safe Cppfront is an experiment for a transition towards Safe C++ built on top of Cppfront and its cpp2 syntax. This readme explains the design, but doesn't reflect the current state of the fork which has not implemented all of the design yet.
 
 # Roadmap
@@ -32,7 +32,6 @@ Because Cppfront does not currently analyze standard C++ code and simply echoes 
 
 Cppfront usually delegates the first two cases to the C++ compiler that will consume the transpiled standard C++ code. But Safe Cppfront must diagnose the third case. For this reason, Safe Cppfront will bundle all three errors in the same diagnostic. There is no meaningful implementation experience to be gained with regards to a Safe C++ transition by doing the work to disambiguate all three cases.
 
-
 # Unsafe operations and constructs
 The initial proof of concept should disallow these unsafe operations and constructs within a safe context:
 1. Calling an unsafe function
@@ -50,9 +49,10 @@ The initial proof of concept should disallow these unsafe operations and constru
 
 This short list is not exhaustive, and is meant to enable exploration of the impacts of safe function coloring on incremental adoption. While disallowing `union`, `reinterpret_cast` and many other unsafe constructs is desirable, and can be done, there is no reason to believe it'll provide further insights for a proposal.
 
-While the list is short, it does aggressively prohibit references and pointers. There are many reasons to start with this.
-1. Minimizing the scope of the minimum viable proposal
-2. Delivering a safe subset of the language as soon as possible
-3. Avoid committing to a specific approach to memory safety until more research has been completed
+# Dynamic checks
+Code within safe contexts would enable bound checks by default. Unsafe blocks would be required
 
+Bounds checking is out of the scope of this project. 
+
+# Cppfront
 [Click here for the Cppfront readme](https://github.com/hsutter/cppfront/blob/main/README.md)
