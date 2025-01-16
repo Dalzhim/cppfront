@@ -50,9 +50,12 @@ The initial proof of concept should disallow these unsafe operations and constru
 This short list is not exhaustive, and is meant to enable exploration of the impacts of safe function coloring on incremental adoption. While disallowing `union`, `reinterpret_cast` and many other unsafe constructs is desirable, and can be done, there is no reason to believe it'll provide further insights for a proposal.
 
 # Dynamic checks
-Code within safe contexts would enable bound checks by default. Unsafe blocks would be required
+Code within safe contexts would enable bound checks by default. Unsafe blocks would be required to opt-out of bounds checking. The same goes for every safety that relies on dynamic checks.
 
-Bounds checking is out of the scope of this project. 
+Implementing such dynamic checks is currently out of the scope of this project because there is no reason to believe it'll provide further insights for a proposal.
+
+# Unsafe blocks
+Opting out of safety can be risky business. And when it becomes necessary to do so, safety first mandates applying a strategy of "least privilege". For this reason, unsafe blocks should provide fine-grained controls over which kind of unsafe operation is allowed rather than open the floodgates to everything unsafe. This way, opting out of bounds checking cannot lead to accidentally calling an unsafe function. And vice versa.
 
 # Cppfront
 [Click here for the Cppfront readme](https://github.com/hsutter/cppfront/blob/main/README.md)
